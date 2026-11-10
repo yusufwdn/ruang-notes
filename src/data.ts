@@ -1,0 +1,25 @@
+﻿export type Note = { id: string; title: string; content: string; project: string; icon: string; color: string; favorite: boolean; updated: number; deleted?: boolean };
+export type Task = { id: string; text: string; done: boolean; tag?: string; updated?: number };
+export type Workspace = { notes: Note[]; tasks: Task[]; projects: string[]; theme: string; autoSave?: boolean };
+export const STORAGE_KEY = 'ruang.workspace.v1';
+const now = Date.now();
+export function initialWorkspace(): Workspace {
+ return { theme: 'light', autoSave:true, projects: ['Pekerjaan', 'Personal', 'Ide & inspirasi'], tasks: [
+ { id:'t1',text:'Review desain halaman onboarding',done:true,tag:'Pekerjaan' },
+ { id:'t2',text:'Rapikan catatan meeting kemarin',done:false,tag:'Pekerjaan' },
+ { id:'t3',text:'Kirim update progress ke tim',done:false,tag:'Pekerjaan' },
+ { id:'t4',text:'Luangkan 20 menit buat baca',done:false,tag:'Personal' }], notes: [
+ { id:'n1',title:'Weekly sync — tim produk',project:'Pekerjaan',icon:'message',color:'purple',favorite:true,updated:now-1200000,content:'<p>Obrolan kecil, langkah berikutnya yang lebih jelas.</p><h2>Yang kita bahas</h2><ul><li>Alur onboarding perlu lebih singkat dan mudah dipahami.</li><li>Prioritas minggu ini: menyelesaikan desain dashboard.</li><li>Feedback pengguna dikumpulkan di satu tempat.</li></ul><h2>Langkah berikutnya</h2><ul data-type="taskList"><li data-type="taskItem" data-checked="false"><p>Siapkan eksplorasi desain onboarding</p></li><li data-type="taskItem" data-checked="false"><p>Jadwalkan review dengan tim hari Kamis</p></li></ul><blockquote><p>Lebih baik satu langkah kecil yang selesai daripada sepuluh rencana yang tertunda.</p></blockquote><h2>Catatan tambahan</h2><p></p>' },
+ { id:'n2',title:'Ide yang lewat di kepala',project:'Ide & inspirasi',icon:'bulb',color:'yellow',favorite:true,updated:now-7200000,content:'<p>Tempat menampung ide sebelum keburu lupa. Nggak harus rapi, yang penting tercatat.</p><h2>Bagaimana kalau…</h2><ul><li>Ada satu ruang kecil buat semua catatan kerja?</li><li>Halaman awal cuma menampilkan hal yang perlu dikerjakan hari ini.</li><li>Menulis terasa senyaman membuka buku baru.</li></ul><h2>Untuk dieksplorasi</h2><p>Coba mulai dari hal yang paling sederhana dan benar-benar dipakai setiap hari.</p>' },
+ { id:'n3',title:'Rencana minggu ini',project:'Personal',icon:'leaf',color:'green',favorite:false,updated:now-86400000,content:'<p>Bikin ruang untuk hal yang penting, termasuk diri sendiri.</p><h2>Tiga hal yang mau dicapai</h2><ul data-type="taskList"><li data-type="taskItem" data-checked="true"><p>Rapikan meja kerja</p></li><li data-type="taskItem" data-checked="false"><p>Selesai baca satu bab buku</p></li><li data-type="taskItem" data-checked="false"><p>Jalan sore tanpa lihat notifikasi</p></li></ul><h2>Pengingat kecil</h2><blockquote><p>Istirahat juga bagian dari proses.</p></blockquote>' },
+ { id:'n4',title:'Checklist sebelum handoff',project:'Pekerjaan',icon:'file',color:'blue',favorite:false,updated:now-172800000,content:'<p>Supaya nggak ada yang ketinggalan waktu handoff ke developer.</p><ul data-type="taskList"><li data-type="taskItem" data-checked="true"><p>Rapikan penamaan komponen</p></li><li data-type="taskItem" data-checked="false"><p>Lengkapi state loading, kosong, dan error</p></li><li data-type="taskItem" data-checked="false"><p>Cek tampilan mobile</p></li><li data-type="taskItem" data-checked="false"><p>Tulis catatan interaksi</p></li></ul>' }
+ ]};
+}
+export function parseWorkspace(raw:string|null):Workspace|null {
+ try { if(!raw)return null;const w=JSON.parse(raw);if(w && Array.isArray(w.notes) && Array.isArray(w.tasks) && Array.isArray(w.projects) && w.notes.every((n:Note)=>n && typeof n.id==='string' && typeof n.title==='string' && typeof n.content==='string' && typeof n.project==='string' && typeof n.updated==='number') && w.tasks.every((t:Task)=>t && typeof t.id==='string' && typeof t.text==='string' && typeof t.done==='boolean') && w.projects.every((p:string)=>typeof p==='string'))return {...w,autoSave:w.autoSave!==false}; }catch{/* Ignore invalid stored data. */}return null;
+}
+export function loadWorkspace():Workspace {try{return parseWorkspace(localStorage.getItem(STORAGE_KEY))||initialWorkspace();}catch{return initialWorkspace();}}
+export function plainText(html:string) { const el=document.createElement('div'); el.innerHTML=html.replace(/<\/(p|li|h[1-6])>/g,' '); return el.textContent || ''; }
+export function escapeHTML(v:string) { return v.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!)); }
+export function timeAgo(value:number) { const m=Math.max(0,Math.floor((Date.now()-value)/60000)); return m<1?'Baru saja':m<60?`${m} menit lalu`:m<1440?`${Math.floor(m/60)} jam lalu`:m<2880?'Kemarin':new Date(value).toLocaleDateString('id-ID',{day:'numeric',month:'short'}); }
+export function downloadFile(name:string,data:string,type:string) { const url=URL.createObjectURL(new Blob([data],{type})); const a=document.createElement('a'); a.href=url; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000); }
